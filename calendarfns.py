@@ -7,7 +7,6 @@ import pytz
 
 # Function to read Google Calendar .ics file and parse events
 def parse_calendar(file_path):
-    import pytz
     file_path = 'gcalendar.ics'
     with open(file_path, 'r') as f:
         cal = Calendar.from_ical(f.read())
