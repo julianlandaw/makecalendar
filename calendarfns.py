@@ -1,13 +1,13 @@
 from datetime import datetime, timezone, timedelta
+from dateutil import tz
 import dateutil.parser as p
-#import pandas as pd
 import matplotlib.pyplot as plt
 import calendar
 
 def utc_to_eastern(utc_dt):
     """Converts a UTC datetime object to Eastern Time."""
-
-    return utc_dt.replace(tzinfo=timezone.utc).astimezone(timezone(timedelta(hours=-5)))
+    x = tz.gettz('US/EASTERN').utcoffset(utc_dt)
+    return utc_dt.replace(tzinfo=timezone.utc).astimezone(timezone(x))
 
 # Function to parse events from an ICS file
 # (Without using the icalendar package)
