@@ -7,5 +7,5 @@ if __name__ == "__main__":
     year = int(sys.argv[3])
     file_name = str(sys.argv[4])
 
-X = parse_calendar(cal_name)
+X = parse_ics(cal_name)
 generate_printable_calendar(X, month, year, file_name)

@@ -1,40 +1,45 @@
 from datetime import datetime, timezone, timedelta
-from icalendar import Calendar
-import pandas as pd
+import dateutil.parser as p
+#import pandas as pd
 import matplotlib.pyplot as plt
 import calendar
-import pytz
 
-# Function to read Google Calendar .ics file and parse events
-def parse_calendar(file_path):
-    file_path = 'gcalendar.ics'
-    with open(file_path, 'r') as f:
-        cal = Calendar.from_ical(f.read())
+def utc_to_eastern(utc_dt):
+    """Converts a UTC datetime object to Eastern Time."""
 
+    return utc_dt.replace(tzinfo=timezone.utc).astimezone(timezone(timedelta(hours=-5)))
+
+# Function to parse events from an ICS file
+# (Without using the icalendar package)
+def parse_ics(file_path):
     events = []
+    with open(file_path, 'r') as file:
+        lines = file.readlines()
 
-    for component in cal.walk():
-        if component.name == "VEVENT":
-            if ((component.get("summary") is not None) and (component.get("dtstart") is not None) and (component.get("dtend") is not None)):
-                if (type(component.get("dtstart").dt) is datetime):
-                    tstart = component.get("dtstart").dt.astimezone(pytz.timezone('US/Eastern'))
-                    tend = component.get("dtend").dt.astimezone(pytz.timezone('US/Eastern'))
-                    event = {
-                        "summary": component.get("summary"),
-                        "start": tstart,
-                        "end": tend,
-                        "times": tstart.strftime("%H:%M") + '-' + tend.strftime("%H:%M")
-                    }
-                else:
-                    event = {
-                        "summary": component.get("summary"),
-                        "start": component.get("dtstart").dt,
-                        "end": component.get("dtend").dt,
-                        "times": "All Day"
-                    }
-                events.append(event)
-
-    return pd.DataFrame(events)
+    event = {}
+    for line in lines:
+        line = line.strip()
+        if line.startswith("BEGIN:VEVENT"):
+            event = {}
+        elif line.startswith("SUMMARY:"):
+            event["summary"] = line[len("SUMMARY:"):].strip()
+        elif line.startswith("DTSTART:"):
+            dtstart = line[len("DTSTART:"):].strip()
+            event["start"] = utc_to_eastern(p.parse(dtstart))
+        elif line.startswith("DTEND:"):
+            dtend = line[len("DTEND:"):].strip()
+            event["end"] = utc_to_eastern(p.parse(dtend))
+            event["times"] = event["start"].strftime("%H:%M") + '-' + event["end"].strftime("%H:%M")
+        elif line.startswith("DTSTART;VALUE=DATE:"):
+            dtstart = line[len("DTSTART;VALUE=DATE:"):].strip()
+            event["start"] = p.parse(dtstart)
+        elif line.startswith("DTEND;VALUE=DATE:"):
+            dtend = line[len("DTEND;VALUE=DATE:"):].strip()
+            event["end"] = p.parse(dtend)
+            event["times"] = 'ALL DAY'
+        elif line.startswith("END:VEVENT"):
+            events.append(event)
+    return events
 
 # Function to generate a printable calendar layout
 def generate_printable_calendar(events_df, month, year, output_file):
@@ -86,13 +91,14 @@ def generate_printable_calendar(events_df, month, year, output_file):
                 ax[i + 1, j].text(0.5, 0.9, str(day), fontsize=12, ha='center', va='top', color='black', wrap=True)
 
                 # Add events to the corresponding day
-                day_events = events_df[events_df['start'].dt.day == day]
+                day_events = []
+                for k in events_df:
+                    if (k["start"].day == day and k["start"].month == month and k["start"].year == year): 
+                        day_events.append(k)
                 y_offset = 0.7
-                for _, event in day_events.iterrows():
-                    if (event['start'].month == month and event['start'].year == year):
-                        ax[i + 1, j].text(
-                            0.5, y_offset, f"{event['summary']} \n {event['times']}", fontsize=7, ha='center', va='top', color='blue', wrap=True)
-                        y_offset -= 0.2
+                for event in day_events:
+                    ax[i + 1, j].text(0.5, y_offset, f"{event['summary']} \n {event['times']}", fontsize=7, ha='center', va='top', color='blue', wrap=True)
+                    y_offset -= 0.2
 
     # Adjust layout
     fig.set_figheight(8.5)
