@@ -43,14 +43,14 @@ def parse_ics(file_path):
 
 # Function to generate a printable calendar layout
 def generate_printable_calendar(events_df, month, year, output_file):
-    cal = calendar.Calendar()
+    cal = calendar.Calendar(firstweekday=6)
     days_in_month = [day for day in cal.itermonthdays(year, month) if day != 0]
     num_weeks = len(list(cal.monthdayscalendar(year, month)))
 
     fig, ax = plt.subplots(num_weeks + 1, 7, dpi=100)
     fig.suptitle(f"{calendar.month_name[month]} {year}", fontsize=20)
 
-    days_of_week = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+    days_of_week = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
     for j, day_name in enumerate(days_of_week):
         ax[0, j].set_facecolor("lightgray")
         ax[0, j].text(0.5, 0.5, day_name, fontsize=12, ha='center', va='center', color='black')
@@ -58,11 +58,11 @@ def generate_printable_calendar(events_df, month, year, output_file):
         ax[0, j].set_ylim(0, 1)
         ax[0, j].spines['top'].set_visible(False)
         ax[0, j].spines['bottom'].set_visible(False)
-        if (day_name == "Saturday"):
+        if (day_name == "Saturday" or day_name == "Monday"):
             ax[0, j].spines['left'].set_visible(True)
         else:
             ax[0, j].spines['left'].set_visible(False)
-        if (day_name == "Friday"):
+        if (day_name == "Friday" or day_name == "Sunday"):
             ax[0, j].spines['right'].set_visible(True)
         else:
             ax[0, j].spines['right'].set_visible(False)
