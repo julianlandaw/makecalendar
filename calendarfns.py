@@ -6,7 +6,7 @@ import calendar
 
 def utc_to_eastern(utc_dt):
     """Converts a UTC datetime object to Eastern Time."""
-    x = tz.gettz('EST').utcoffset(utc_dt)
+    x = tz.gettz('America/New York').utcoffset(utc_dt)
     return utc_dt.replace(tzinfo=timezone.utc).astimezone(timezone(x))
 
 # Function to parse events from an ICS file
